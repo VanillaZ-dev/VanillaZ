@@ -23,17 +23,18 @@ async def on_ready():
     update_status.start()
 
 @tasks.loop(minutes=5)
-async def update_status():
-    print("🔄 Updating player count...")
-    try:
-        response = requests.get(API_URL, headers=HEADERS)
-        if response.status_code == 200:
-            data = response.json().get("data", {})
-            players = data.get("players", {}).get("connected", 0)
-            max_players = data.get("players", {}).get("slots", 0)
-            status = f"{players}/{max_players} online"
-        else:
-            status = "API error"
+def get_player_count():
+    url = f"https://api.cftools.cloud/v1/server/{os.getenv('SERVER_ID')}/current-player-count"
+    headers = {
+        "Authorization": f"Bearer {os.getenv('API_TOKEN')}",
+        "Accept": "application/json"
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json()["data"]["player_count"]
+    else:
+        print("CF Tools API Error:", response.status_code, response.text)
+        return None
     except Exception as e:
         print(f"❌ Error: {e}")
         status = "Error"
